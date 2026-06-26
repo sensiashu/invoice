@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三聯式發票計算系統</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c5f2d;
+            --secondary: #97bc62;
+            --accent: #d4a574;
+            --bg-paper: #fdfbf7;
+            --bg-light: #f5f1e8;
+            --text-dark: #1a1a1a;
+            --text-medium: #4a4a4a;
+            --border: #c8c0a9;
+            --border-dark: #8b8470;
+            --shadow: rgba(44, 95, 45, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #e8e4d9 0%, #d4cdb8 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            color: var(--text-dark);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeIn 0.8s ease-out 0.2s backwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .header h1 {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 2.5rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+            text-shadow: 2px 2px 4px var(--shadow);
+        }
+
+        .header p {
+            color: var(--text-medium);
+            font-size: 0.95rem;
+        }
+
+        .invoice-paper {
+            background: var(--bg-paper);
+            border-radius: 8px;
+            box-shadow: 
+                0 10px 40px var(--shadow),
+                0 0 0 1px var(--border),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            animation: slideIn 0.8s ease-out 0.3s backwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .invoice-paper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .invoice-title {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.8rem;
+            color: var(--primary);
+            font-weight: 600;
+            letter-spacing: 0.15em;
+        }
+
+        .invoice-date {
+            text-align: right;
+        }
+
+        .invoice-date label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-medium);
+            margin-bottom: 0.3rem;
+        }
+
+        .invoice-date input {
+            padding: 0.5rem 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-family: 'Noto Sans TC', sans-serif;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .invoice-date input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 95, 45, 0.1);
+        }
+
+        .section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            padding-left: 0.5rem;
+            border-left: 4px solid var(--accent);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-medium);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input {
+            padding: 0.7rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: 'Noto Sans TC', sans-serif;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 95, 45, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .items-table thead {
+            background: linear-gradient(135deg, var(--primary), #3d7a3f);
+            color: white;
+        }
+
+        .items-table th {
+            padding: 1rem 0.8rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+        }
+
+        .items-table th:nth-child(1) { width: 5%; }
+        .items-table th:nth-child(2) { width: 26%; }
+        .items-table th:nth-child(3) { width: 13%; text-align: center; }
+        .items-table th:nth-child(4) { width: 16%; text-align: right; }
+        .items-table th:nth-child(5) { width: 20%; text-align: right; }
+        .items-table th:nth-child(6) { width: 20%; text-align: right; }
+
+        .items-table tbody tr {
+            background: white;
+            transition: background 0.2s ease;
+        }
+
+        .items-table tbody tr:hover {
+            background: var(--bg-light);
+        }
+
+        .items-table tbody tr:not(:last-child) td {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .items-table td {
+            padding: 0.8rem;
+        }
+
+        .items-table input {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-family: 'Noto Sans TC', sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        .items-table input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 2px rgba(151, 188, 98, 0.2);
+        }
+
+        .items-table input[readonly] {
+            background: var(--bg-light);
+            color: var(--text-medium);
+            cursor: not-allowed;
+        }
+
+        .items-table td:nth-child(3) input,
+        .items-table td:nth-child(4) input,
+        .items-table td:nth-child(5) input {
+            text-align: right;
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, var(--bg-light) 0%, #ebe7d8 100%);
+            border: 2px solid var(--border-dark);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            padding-top: 1rem;
+            margin-top: 0.5rem;
+            border-top: 2px solid var(--border-dark);
+        }
+
+        .summary-label {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 1rem;
+        }
+
+        .summary-row:last-child .summary-label {
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        .summary-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .summary-row:last-child .summary-value {
+            font-size: 1.3rem;
+        }
+
+        .chinese-amount {
+            background: white;
+            border: 2px solid var(--accent);
+            border-radius: 6px;
+            padding: 1rem 1.5rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .chinese-amount-label {
+            font-size: 0.85rem;
+            color: var(--text-medium);
+            margin-bottom: 0.5rem;
+        }
+
+        .chinese-amount-value {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary);
+            letter-spacing: 0.1em;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Noto Sans TC', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #3d7a3f);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(44, 95, 45, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .invoice-paper {
+                padding: 1.5rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .items-table {
+                font-size: 0.8rem;
+            }
+
+            .items-table th,
+            .items-table td {
+                padding: 0.5rem 0.3rem;
+            }
+
+            .items-table input {
+                padding: 0.4rem 0.5rem;
+                font-size: 0.85rem;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .invoice-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .invoice-date {
+                text-align: left;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .summary-value {
+                font-size: 1rem;
+            }
+
+            .summary-row:last-child .summary-value {
+                font-size: 1.1rem;
+            }
+
+            .chinese-amount-value {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0.5rem;
+            }
+
+            .container {
+                margin: 0 auto;
+            }
+
+            .invoice-paper {
+                padding: 1rem;
+                border-radius: 4px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+                margin-bottom: 0.3rem;
+            }
+
+            .header p {
+                font-size: 0.85rem;
+            }
+
+            .invoice-title {
+                font-size: 1.3rem;
+            }
+
+            .section-title {
+                font-size: 0.9rem;
+            }
+
+            .form-group label {
+                font-size: 0.8rem;
+            }
+
+            .form-group input {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.95rem;
+            }
+
+            .items-table {
+                font-size: 0.75rem;
+                margin-bottom: 1rem;
+            }
+
+            .items-table th {
+                padding: 0.4rem 0.25rem;
+                font-size: 0.75rem;
+            }
+
+            .items-table td {
+                padding: 0.35rem 0.2rem;
+            }
+
+            .items-table input {
+                padding: 0.3rem 0.4rem;
+                font-size: 0.8rem;
+            }
+
+            .summary-box {
+                padding: 1rem;
+            }
+
+            .summary-row {
+                padding: 0.6rem 0;
+            }
+
+            .summary-label {
+                font-size: 0.9rem;
+            }
+
+            .summary-value {
+                font-size: 0.95rem;
+            }
+
+            .chinese-amount {
+                padding: 0.8rem 1rem;
+            }
+
+            .chinese-amount-label {
+                font-size: 0.8rem;
+            }
+
+            .chinese-amount-value {
+                font-size: 1rem;
+            }
+
+            .btn {
+                padding: 0.8rem 1rem;
+                font-size: 0.95rem;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .action-buttons {
+                display: none;
+            }
+
+            .invoice-paper {
+                box-shadow: none;
+                border: 1px solid #000;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>三聯式發票</h1>
+            <p>統一發票計算系統</p>
+        </div>
+
+        <div class="invoice-paper">
+            <div class="invoice-header">
+                <div class="invoice-title">統一發票</div>
+                <div class="invoice-date">
+                    <label>開立日期</label>
+                    <input type="date" id="invoiceDate">
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">買受人資訊</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>買受人</label>
+                        <input type="text" id="buyerName" placeholder="請輸入買受人名稱">
+                    </div>
+                    <div class="form-group">
+                        <label>統一編號</label>
+                        <input type="text" id="taxId" placeholder="請輸入統一編號" maxlength="8">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">品名明細</div>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>項次</th>
+                            <th>品名</th>
+                            <th>數量</th>
+                            <th>單價</th>
+                            <th>金額（未稅）</th>
+                            <th>金額（含稅）</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><input type="text" class="item-name" placeholder="品名"></td>
+                            <td><input type="number" class="item-qty" min="0" step="1" value="0" placeholder="數量"></td>
+                            <td><input type="number" class="item-price" min="0" step="0.01" readonly placeholder="單價"></td>
+                            <td><input type="number" class="item-amount-notax" min="0" step="1" value="0" placeholder="未稅金額"></td>
+                            <td><input type="number" class="item-amount-tax" min="0" step="1" value="0" placeholder="含稅金額"></td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td><input type="text" class="item-name" placeholder="品名"></td>
+                            <td><input type="number" class="item-qty" min="0" step="1" value="0" placeholder="數量"></td>
+                            <td><input type="number" class="item-price" min="0" step="0.01" readonly placeholder="單價"></td>
+                            <td><input type="number" class="item-amount-notax" min="0" step="1" value="0" placeholder="未稅金額"></td>
+                            <td><input type="number" class="item-amount-tax" min="0" step="1" value="0" placeholder="含稅金額"></td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td><input type="text" class="item-name" placeholder="品名"></td>
+                            <td><input type="number" class="item-qty" min="0" step="1" value="0" placeholder="數量"></td>
+                            <td><input type="number" class="item-price" min="0" step="0.01" readonly placeholder="單價"></td>
+                            <td><input type="number" class="item-amount-notax" min="0" step="1" value="0" placeholder="未稅金額"></td>
+                            <td><input type="number" class="item-amount-tax" min="0" step="1" value="0" placeholder="含稅金額"></td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td><input type="text" class="item-name" placeholder="品名"></td>
+                            <td><input type="number" class="item-qty" min="0" step="1" value="0" placeholder="數量"></td>
+                            <td><input type="number" class="item-price" min="0" step="0.01" readonly placeholder="單價"></td>
+                            <td><input type="number" class="item-amount-notax" min="0" step="1" value="0" placeholder="未稅金額"></td>
+                            <td><input type="number" class="item-amount-tax" min="0" step="1" value="0" placeholder="含稅金額"></td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td><input type="text" class="item-name" placeholder="品名"></td>
+                            <td><input type="number" class="item-qty" min="0" step="1" value="0" placeholder="數量"></td>
+                            <td><input type="number" class="item-price" min="0" step="0.01" readonly placeholder="單價"></td>
+                            <td><input type="number" class="item-amount-notax" min="0" step="1" value="0" placeholder="未稅金額"></td>
+                            <td><input type="number" class="item-amount-tax" min="0" step="1" value="0" placeholder="含稅金額"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-row">
+                    <span class="summary-label">銷售額合計（未稅）</span>
+                    <span class="summary-value" id="subtotal">NT$ 0</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">營業稅（5%）</span>
+                    <span class="summary-value" id="tax">NT$ 0</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">總計</span>
+                    <span class="summary-value" id="total">NT$ 0</span>
+                </div>
+            </div>
+
+            <div class="chinese-amount">
+                <div class="chinese-amount-label">總計新台幣（大寫）</div>
+                <div class="chinese-amount-value" id="chineseAmount">零元整</div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="window.print()">列印發票</button>
+                <button class="btn btn-secondary" onclick="clearForm()">清除重填</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 設定今天日期為預設值
+        document.getElementById('invoiceDate').valueAsDate = new Date();
+
+        // 數字轉中文大寫（完整顯示零）
+        function numberToChinese(num) {
+            if (num === 0) return '零元整';
+            
+            const digits = ['零', '壹', '貳', '參', '肆', '伍', '陸', '柒', '捌', '玖'];
+            const units = ['', '拾', '佰', '仟'];
+            const bigUnits = ['', '萬', '億', '兆'];
+            
+            let integer = Math.floor(num);
+            let result = '';
+            let bigUnitIndex = 0;
+            
+            // 分段處理（每4位數一段）
+            const sections = [];
+            while (integer > 0) {
+                sections.push(integer % 10000);
+                integer = Math.floor(integer / 10000);
+            }
+            
+            // 從最高位開始組合
+            for (let i = sections.length - 1; i >= 0; i--) {
+                let section = sections[i];
+                let sectionStr = '';
+                
+                // 處理每一位數
+                for (let unitIdx = 3; unitIdx >= 0; unitIdx--) {
+                    const divisor = Math.pow(10, unitIdx);
+                    const digit = Math.floor(section / divisor);
+                    section = section % divisor;
+                    
+                    if (digit === 0) {
+                        // 零的位數也要顯示
+                        sectionStr += digits[0] + units[unitIdx];
+                    } else {
+                        sectionStr += digits[digit] + units[unitIdx];
+                    }
+                }
+                
+                // 加上大單位（萬、億等）
+                if (sections[i] > 0 || i === 0) {
+                    result += sectionStr + bigUnits[i];
+                }
+            }
+            
+            return result + '元整';
+        }
+
+        // 計算所有金額（支援未稅和含稅雙向換算）
+        function calculateAmounts() {
+            // 收集所有品項資料
+            const items = [];
+            document.querySelectorAll('.items-table tbody tr').forEach(row => {
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const amountNotaxInput = row.querySelector('.item-amount-notax');
+                const amountTaxInput = row.querySelector('.item-amount-tax');
+                
+                let amountBeforeTax = parseFloat(amountNotaxInput.value) || 0;
+                let amountWithTax = parseFloat(amountTaxInput.value) || 0;
+                
+                // 雙向換算邏輯
+                if (amountBeforeTax > 0 && amountWithTax === 0) {
+                    // 如果只填寫未稅金額，計算含稅金額
+                    amountWithTax = Math.round(amountBeforeTax * 1.05);
+                    amountTaxInput.value = amountWithTax;
+                } else if (amountWithTax > 0 && amountBeforeTax === 0) {
+                    // 如果只填寫含稅金額，計算未稅金額
+                    amountBeforeTax = Math.round(amountWithTax / 1.05);
+                    amountNotaxInput.value = amountBeforeTax;
+                }
+                
+                // 添加到items列表（只要有一個金額就算）
+                if (qty > 0 && (amountBeforeTax > 0 || amountWithTax > 0)) {
+                    items.push({
+                        row: row,
+                        qty: qty,
+                        amountWithTax: amountWithTax,
+                        amountBeforeTax: amountBeforeTax
+                    });
+                }
+            });
+
+            // 計算未稅總額
+            let subtotal = 0;
+            items.forEach(item => {
+                subtotal += item.amountBeforeTax;
+            });
+
+            // 從未稅總額計算稅額
+            const tax = Math.round(subtotal * 0.05);
+            
+            // 計算總計（未稅 + 稅額）
+            const calculatedTotal = subtotal + tax;
+
+            // 更新顯示
+            document.getElementById('subtotal').textContent = `NT$ ${subtotal.toLocaleString()}`;
+            document.getElementById('tax').textContent = `NT$ ${tax.toLocaleString()}`;
+            document.getElementById('total').textContent = `NT$ ${calculatedTotal.toLocaleString()}`;
+            
+            // 更新中文大寫
+            document.getElementById('chineseAmount').textContent = numberToChinese(calculatedTotal);
+
+            // 計算並更新單價
+            calculateUnitPrices(items);
+        }
+
+        // 計算單價
+        function calculateUnitPrices(items) {
+            if (items.length === 0) return;
+
+            // 直接計算單價 = 未稅金額 / 數量
+            items.forEach(item => {
+                const unitPrice = item.amountBeforeTax / item.qty;
+                item.row.querySelector('.item-price').value = unitPrice.toFixed(2);
+            });
+        }
+
+        // 監聽品項的數量、未稅金額和含稅金額輸入
+        document.querySelectorAll('.item-qty, .item-amount-notax, .item-amount-tax').forEach(input => {
+            input.addEventListener('input', function() {
+                // 如果是金額欄位，清除另一個金額欄位以觸發雙向換算
+                if (this.classList.contains('item-amount-notax')) {
+                    // 當未稅金額被編輯時，清除含稅金額以允許自動計算
+                    const row = this.closest('tr');
+                    const nextInput = row.querySelector('.item-amount-tax');
+                    // 只在未稅金額有值且含稅金額也有值時才清除含稅
+                    if (this.value && nextInput.value) {
+                        nextInput.value = '';
+                    }
+                } else if (this.classList.contains('item-amount-tax')) {
+                    // 當含稅金額被編輯時，清除未稅金額以允許自動計算
+                    const row = this.closest('tr');
+                    const prevInput = row.querySelector('.item-amount-notax');
+                    // 只在含稅金額有值且未稅金額也有值時才清除未稅
+                    if (this.value && prevInput.value) {
+                        prevInput.value = '';
+                    }
+                }
+                calculateAmounts();
+            });
+        });
+
+        // 清除表單
+        function clearForm() {
+            if (confirm('確定要清除所有資料嗎？')) {
+                document.getElementById('buyerName').value = '';
+                document.getElementById('taxId').value = '';
+                document.querySelectorAll('.item-name').forEach(input => input.value = '');
+                document.querySelectorAll('.item-qty').forEach(input => input.value = '0');
+                document.querySelectorAll('.item-price').forEach(input => input.value = '');
+                document.querySelectorAll('.item-amount-notax').forEach(input => input.value = '');
+                document.querySelectorAll('.item-amount-tax').forEach(input => input.value = '0');
+                document.getElementById('invoiceDate').valueAsDate = new Date();
+                calculateAmounts();
+            }
+        }
+
+        // 統一編號格式驗證
+        document.getElementById('taxId').addEventListener('input', function() {
+            this.value = this.value.replace(/[^\d]/g, '');
+        });
+
+        // 初始計算
+        calculateAmounts();
+    </script>
+</body>
+</html>
